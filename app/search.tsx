@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
+import { useTheme } from '../contexts/ThemeContext';
 import { globalSearch } from '../db/search';
 import { formatDateShort, isOverdue } from '../utils/dates';
 import SearchBar from '../components/SearchBar';
@@ -12,6 +13,7 @@ import CustomerCard from '../components/CustomerCard';
 
 export default function SearchScreen() {
   const router = useRouter();
+  useTheme();
   const [query, setQuery] = useState('');
   const [customers, setCustomers] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -30,7 +32,7 @@ export default function SearchScreen() {
   const hasResults = customers.length > 0 || orders.length > 0;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.background }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={22} color={Colors.text} />
@@ -72,7 +74,7 @@ function ScrollViewResults({ customers, orders, router }: any) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+  safe: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, gap: 8, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.borderLight },
   backBtn: { padding: 4 },
   hint: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40 },

@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
 import { Colors } from '../../constants/colors';
+import { useTheme } from '../../contexts/ThemeContext';
 import { getMeasurementById } from '../../db/measurements';
 import { Measurement } from '../../types';
 
 export default function MeasurementDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  useTheme();
   const [measurement, setMeasurement] = useState<Measurement | null>(null);
 
   useFocusEffect(useCallback(() => {
@@ -18,7 +20,7 @@ export default function MeasurementDetailScreen() {
   const data = JSON.parse(measurement.data) as Record<string, number>;
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: Colors.background }]}>
       <View style={styles.header}>
         <Text style={styles.garment}>{measurement.label}</Text>
         <Text style={styles.meta}>Unit: {measurement.unit} · Recorded: {measurement.recorded_at.split(' ')[0]}</Text>
@@ -42,7 +44,7 @@ export default function MeasurementDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   header: { padding: 16, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.borderLight },
   garment: { fontSize: 20, fontWeight: '700', color: Colors.text },
   meta: { fontSize: 13, color: Colors.textSecondary, marginTop: 4 },

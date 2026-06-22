@@ -3,7 +3,7 @@ import * as FileSystem from 'expo-file-system';
 const docDir: string = (FileSystem as any).documentDirectory ?? '';
 import * as Sharing from 'expo-sharing';
 
-const TABLES = ['settings', 'customers', 'measurement_templates', 'measurements', 'employees', 'orders', 'payments'];
+const TABLES = ['settings', 'customers', 'measurement_templates', 'measurements', 'employees', 'employee_rates', 'orders', 'order_items', 'payments'];
 
 export async function exportBackup(): Promise<string> {
   const db = await getDatabase();

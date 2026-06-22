@@ -33,7 +33,18 @@ export const DEFAULT_GARMENTS: GarmentTemplate[] = [
     type: 'Lehenga',
     fields: ['Waist', 'Length'],
   },
+  {
+    type: 'Saree Zig Zag',
+    fields: ['Number of Pieces', 'Border Width', 'Length'],
+  },
+  {
+    type: 'Falls & Kucchu',
+    fields: ['Number of Pieces', 'Falls Length', 'Kucchu Length'],
+  },
 ];
+
+// These garment types are quantity-based only — no body measurement form needed
+export const NO_MEASUREMENT_GARMENTS = new Set(['Saree Zig Zag', 'Falls & Kucchu']);
 
 export type MeasurementUnit = 'in' | 'cm';
 export const UNIT_LABELS: Record<MeasurementUnit, string> = {

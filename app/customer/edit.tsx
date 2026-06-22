@@ -8,12 +8,14 @@ import { useAlert } from '../../hooks/useAlert';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/colors';
+import { useTheme } from '../../contexts/ThemeContext';
 import { getCustomerById, updateCustomer, isPhoneUnique } from '../../db/customers';
 
 export default function EditCustomerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  useTheme();
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -53,7 +55,7 @@ export default function EditCustomerScreen() {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior="padding" keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
+    <KeyboardAvoidingView style={[styles.container, { backgroundColor: Colors.background }]} behavior="padding" keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
       <ScrollView contentContainerStyle={styles.form} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.field}>
           <Text style={styles.label}>Name *</Text>
@@ -77,7 +79,7 @@ export default function EditCustomerScreen() {
         </View>
       </ScrollView>
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
+        <TouchableOpacity style={[styles.saveBtn, { backgroundColor: Colors.primary }, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
           <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save Changes'}</Text>
         </TouchableOpacity>
       </View>
@@ -87,13 +89,13 @@ export default function EditCustomerScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   form: { padding: 16, paddingBottom: 100 },
   field: { marginBottom: 18 },
   label: { fontSize: 13, fontWeight: '500', color: Colors.textSecondary, marginBottom: 6 },
   input: { backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: Colors.text },
   textArea: { minHeight: 80, paddingTop: 12 },
   footer: { paddingHorizontal: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: Colors.borderLight, backgroundColor: Colors.white },
-  saveBtn: { backgroundColor: Colors.primary, borderRadius: 12, paddingVertical: 15, alignItems: 'center' },
+  saveBtn: { borderRadius: 12, paddingVertical: 15, alignItems: 'center' },
   saveBtnText: { color: Colors.white, fontSize: 16, fontWeight: '600' },
 });

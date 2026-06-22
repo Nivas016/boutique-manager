@@ -6,6 +6,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/colors';
+import { useTheme } from '../../contexts/ThemeContext';
 import UnitToggle from '../../components/UnitToggle';
 import { DEFAULT_GARMENTS, MeasurementUnit } from '../../constants/garments';
 import { createMeasurement } from '../../db/measurements';
@@ -14,6 +15,7 @@ export default function NewMeasurementScreen() {
   const { customerId } = useLocalSearchParams<{ customerId: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  useTheme();
   const [garmentType, setGarmentType] = useState('');
   const [unit, setUnit] = useState<MeasurementUnit>('in');
   const [values, setValues] = useState<Record<string, string>>({});
@@ -44,7 +46,7 @@ export default function NewMeasurementScreen() {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior="padding" keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
+    <KeyboardAvoidingView style={[styles.container, { backgroundColor: Colors.background }]} behavior="padding" keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
       <ScrollView contentContainerStyle={styles.form} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.topRow}>
           <View style={{ flex: 1 }}>
@@ -81,7 +83,7 @@ export default function NewMeasurementScreen() {
         {garmentType && <View style={{ marginTop: 20 }}><Text style={styles.label}>Notes</Text><TextInput style={[styles.input, { minHeight: 60 }]} value={notes} onChangeText={setNotes} placeholder="Fit preferences..." placeholderTextColor={Colors.textTertiary} multiline textAlignVertical="top" /></View>}
       </ScrollView>
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
+        <TouchableOpacity style={[styles.saveBtn, { backgroundColor: Colors.primary }, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
           <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save Measurement'}</Text>
         </TouchableOpacity>
       </View>
@@ -91,7 +93,7 @@ export default function NewMeasurementScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   form: { padding: 16, paddingBottom: 100 },
   topRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-end', marginBottom: 16 },
   label: { fontSize: 13, fontWeight: '500', color: Colors.textSecondary, marginBottom: 6 },
@@ -109,6 +111,6 @@ const styles = StyleSheet.create({
   unitText: { position: 'absolute', right: 10, top: '50%', fontSize: 11, color: Colors.textTertiary, transform: [{ translateY: -7 }] },
   input: { backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: Colors.text },
   footer: { paddingHorizontal: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: Colors.borderLight, backgroundColor: Colors.white },
-  saveBtn: { backgroundColor: Colors.primary, borderRadius: 12, paddingVertical: 15, alignItems: 'center' },
+  saveBtn: { borderRadius: 12, paddingVertical: 15, alignItems: 'center' },
   saveBtnText: { color: Colors.white, fontSize: 16, fontWeight: '600' },
 });

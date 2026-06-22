@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView,
-  Platform, StatusBar,
+  Platform, StatusBar, Image,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../../constants/colors';
+import { useTheme } from '../../contexts/ThemeContext';
 import { getDashboardStats, getOrders } from '../../db/orders';
 import { getSetting } from '../../db/settings';
 import { OrderWithDetails } from '../../types';
@@ -18,6 +19,7 @@ const TOP_PADDING = Platform.OS === 'android' ? (StatusBar.currentHeight || 40) 
 
 export default function Dashboard() {
   const router = useRouter();
+  useTheme(); // subscribe to theme changes so inline Colors.* props update
   const [stats, setStats] = useState({ overdue: 0, dueToday: 0, dueTomorrow: 0, active: 0 });
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
   const [shopName, setShopName] = useState('My Boutique');
@@ -44,13 +46,16 @@ export default function Dashboard() {
   };
 
   return (
-    <View style={styles.safe}>
+    <View style={[styles.safe, { backgroundColor: Colors.background }]}>
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        <LinearGradient colors={['#E0F2FE', '#F0F9FF', Colors.background]} style={styles.headerGradient}>
+        <LinearGradient colors={[Colors.primaryLight, Colors.background, Colors.background]} style={styles.headerGradient}>
           <View style={[styles.header, { paddingTop: TOP_PADDING }]}>
-            <View>
-              <Text style={styles.greeting}>{greeting()} ✨</Text>
-              <Text style={styles.shopName}>{shopName || 'My Boutique'}</Text>
+            <View style={styles.headerLeft}>
+              <Image source={require('../../assets/images/icon.png')} style={styles.logo} />
+              <View>
+                <Text style={styles.greeting}>{greeting()} ✨</Text>
+                <Text style={styles.shopName}>{shopName || 'My Boutique'}</Text>
+              </View>
             </View>
             <TouchableOpacity style={styles.searchBtn} onPress={() => router.push('/search')}>
               <Ionicons name="search-outline" size={20} color={Colors.primary} />
@@ -58,17 +63,17 @@ export default function Dashboard() {
           </View>
 
           <View style={styles.statsRow}>
-            <TouchableOpacity style={[styles.statCard, styles.statOverdue]}>
+            <TouchableOpacity style={[styles.statCard, { backgroundColor: Colors.dangerLight }]} onPress={() => router.push({ pathname: '/(tabs)/orders', params: { filter: 'overdue' } } as any)} activeOpacity={0.75}>
               <View style={styles.statIconWrap}><Ionicons name="alert-circle" size={18} color={Colors.danger} /></View>
               <Text style={[styles.statNumber, { color: Colors.danger }]}>{stats.overdue}</Text>
               <Text style={[styles.statLabel, { color: Colors.danger }]}>Overdue</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.statCard, styles.statToday]}>
+            <TouchableOpacity style={[styles.statCard, { backgroundColor: Colors.warningLight }]} onPress={() => router.push({ pathname: '/(tabs)/orders', params: { filter: 'today' } } as any)} activeOpacity={0.75}>
               <View style={styles.statIconWrap}><Ionicons name="time" size={18} color={Colors.warning} /></View>
               <Text style={[styles.statNumber, { color: Colors.warning }]}>{stats.dueToday}</Text>
               <Text style={[styles.statLabel, { color: Colors.warning }]}>Due today</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.statCard, styles.statTomorrow]}>
+            <TouchableOpacity style={[styles.statCard, { backgroundColor: Colors.primaryLight }]} onPress={() => router.push({ pathname: '/(tabs)/orders', params: { filter: 'tomorrow' } } as any)} activeOpacity={0.75}>
               <View style={styles.statIconWrap}><Ionicons name="calendar" size={18} color={Colors.primary} /></View>
               <Text style={[styles.statNumber, { color: Colors.primary }]}>{stats.dueTomorrow}</Text>
               <Text style={[styles.statLabel, { color: Colors.primary }]}>Tomorrow</Text>
@@ -78,13 +83,13 @@ export default function Dashboard() {
 
         <View style={styles.quickRow}>
           <TouchableOpacity style={styles.quickBtn} onPress={() => router.push('/order/new')} activeOpacity={0.8}>
-            <LinearGradient colors={['#0EA5E9', '#38BDF8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.quickIconGradient}>
+            <LinearGradient colors={[Colors.primary, Colors.primaryMuted]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.quickIconGradient}>
               <Ionicons name="add" size={20} color="#FFF" />
             </LinearGradient>
             <Text style={styles.quickLabel}>New order</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.quickBtn} onPress={() => router.push('/customer/new')} activeOpacity={0.8}>
-            <LinearGradient colors={['#10B981', '#34D399']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.quickIconGradient}>
+            <LinearGradient colors={[Colors.success, '#34D399']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.quickIconGradient}>
               <Ionicons name="person-add-outline" size={18} color="#FFF" />
             </LinearGradient>
             <Text style={styles.quickLabel}>New customer</Text>
@@ -123,18 +128,17 @@ export default function Dashboard() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+  safe: { flex: 1 },
   scroll: { flex: 1 },
   headerGradient: { paddingBottom: 8 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 8 },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  logo: { width: 42, height: 42, borderRadius: 21 },
   greeting: { fontSize: 14, color: Colors.textSecondary, letterSpacing: 0.2 },
-  shopName: { fontSize: 24, fontWeight: '800', color: Colors.text, marginTop: 2, letterSpacing: -0.3 },
+  shopName: { fontSize: 22, fontWeight: '800', color: Colors.text, marginTop: 2, letterSpacing: -0.3 },
   searchBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: Colors.white, alignItems: 'center', justifyContent: 'center', shadowColor: Colors.cardShadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8, elevation: 3 },
   statsRow: { flexDirection: 'row', paddingHorizontal: 16, gap: 10, marginTop: 16 },
   statCard: { flex: 1, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 10, alignItems: 'center', shadowColor: Colors.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 6, elevation: 2 },
-  statOverdue: { backgroundColor: '#FFF5F5' },
-  statToday: { backgroundColor: '#FFFBEB' },
-  statTomorrow: { backgroundColor: '#F0F9FF' },
   statIconWrap: { marginBottom: 6 },
   statNumber: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
   statLabel: { fontSize: 11, fontWeight: '600', marginTop: 1, letterSpacing: 0.3 },

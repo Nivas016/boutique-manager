@@ -1,6 +1,6 @@
 import { SQLiteDatabase } from 'expo-sqlite';
 
-const SCHEMA_VERSION = 6;
+const SCHEMA_VERSION = 7;
 
 const CREATE_TABLES = `
   CREATE TABLE IF NOT EXISTS settings (
@@ -156,6 +156,35 @@ export async function runMigrations(db: SQLiteDatabase): Promise<void> {
     try { await db.execAsync(`ALTER TABLE orders ADD COLUMN stitching_completed_at TEXT`); } catch {}
     try { await db.execAsync(`ALTER TABLE orders ADD COLUMN embroidery_completed_at TEXT`); } catch {}
     await db.runAsync(`UPDATE settings SET value = '6' WHERE key = 'schema_version'`);
+  }
+
+  if (version < 7) {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS order_items (
+        id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_id                INTEGER NOT NULL,
+        garment_type            TEXT    NOT NULL,
+        quantity                INTEGER NOT NULL DEFAULT 1,
+        unit_price              REAL    NOT NULL DEFAULT 0,
+        employee_id             INTEGER,
+        employee_share          REAL    NOT NULL DEFAULT 0,
+        embroidery_employee_id  INTEGER,
+        embroidery_share        REAL    NOT NULL DEFAULT 0,
+        notes                   TEXT,
+        sort_order              INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+      )
+    `);
+    await db.execAsync(`
+      CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id)
+    `);
+    // Migrate existing single-garment orders into order_items
+    await db.execAsync(`
+      INSERT INTO order_items (order_id, garment_type, quantity, unit_price, employee_id, employee_share, embroidery_employee_id, embroidery_share, sort_order)
+      SELECT id, garment_type, 1, 0, employee_id, COALESCE(employee_share, 0), embroidery_employee_id, COALESCE(embroidery_share, 0), 0
+      FROM orders
+    `);
+    await db.runAsync(`UPDATE settings SET value = '7' WHERE key = 'schema_version'`);
   }
 }
 

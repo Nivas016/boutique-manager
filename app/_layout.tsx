@@ -3,30 +3,18 @@ import { StatusBar } from 'expo-status-bar';
 import { Colors } from '../constants/colors';
 import { View, ActivityIndicator, Text } from 'react-native';
 import { useDatabase } from '../hooks/useDatabase';
+import { ThemeProvider, useTheme } from '../contexts/ThemeContext';
+import { useEffect } from 'react';
+import { getSetting } from '../db/settings';
+import { initReminder } from '../utils/notifications';
 
-export default function RootLayout() {
-  const { isReady, error } = useDatabase();
-
-  if (error) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background }}>
-        <Text style={{ color: Colors.danger, padding: 20, textAlign: 'center' }}>Database error: {error}</Text>
-      </View>
-    );
-  }
-
-  if (!isReady) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background }}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </View>
-    );
-  }
-
+function ThemedStack() {
+  const { theme } = useTheme();
   return (
     <>
       <StatusBar style="dark" />
       <Stack
+        key={theme}
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: Colors.background },
@@ -165,5 +153,36 @@ export default function RootLayout() {
         />
       </Stack>
     </>
+  );
+}
+
+export default function RootLayout() {
+  const { isReady, error } = useDatabase();
+
+  useEffect(() => {
+    if (!isReady) return;
+    getSetting('reminder_time').then((t) => initReminder(t ?? undefined));
+  }, [isReady]);
+
+  if (error) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background }}>
+        <Text style={{ color: Colors.danger, padding: 20, textAlign: 'center' }}>Database error: {error}</Text>
+      </View>
+    );
+  }
+
+  if (!isReady) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background }}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
+
+  return (
+    <ThemeProvider>
+      <ThemedStack />
+    </ThemeProvider>
   );
 }

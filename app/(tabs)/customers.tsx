@@ -3,6 +3,7 @@ import { View, StyleSheet, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Colors } from '../../constants/colors';
+import { useTheme } from '../../contexts/ThemeContext';
 import { CustomerWithStats } from '../../types';
 import { getCustomers } from '../../db/customers';
 import SearchBar from '../../components/SearchBar';
@@ -12,6 +13,7 @@ import EmptyState from '../../components/EmptyState';
 
 export default function CustomersScreen() {
   const router = useRouter();
+  useTheme();
   const [search, setSearch] = useState('');
   const [customers, setCustomers] = useState<CustomerWithStats[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,7 +36,7 @@ export default function CustomersScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]}>
       <View style={styles.searchContainer}>
         <SearchBar
           placeholder="Name or phone number..."
@@ -72,7 +74,7 @@ export default function CustomersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   searchContainer: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 },
   list: { paddingHorizontal: 16, paddingBottom: 120 },
 });

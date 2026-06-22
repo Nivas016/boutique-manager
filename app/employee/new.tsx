@@ -5,12 +5,14 @@ import { useAlert } from '../../hooks/useAlert';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/colors';
+import { useTheme } from '../../contexts/ThemeContext';
 import { createEmployee, setEmployeeRate } from '../../db/employees';
 import { DEFAULT_GARMENTS } from '../../constants/garments';
 
 export default function NewEmployeeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  useTheme();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [spec, setSpec] = useState('');
@@ -35,7 +37,7 @@ export default function NewEmployeeScreen() {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior="padding" keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
+    <KeyboardAvoidingView style={[styles.container, { backgroundColor: Colors.background }]} behavior="padding" keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
       <ScrollView contentContainerStyle={styles.form} style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
         <View style={styles.field}><Text style={styles.label}>Name *</Text><TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Employee name" placeholderTextColor={Colors.textTertiary} autoFocus autoCapitalize="words" /></View>
         <View style={styles.field}><Text style={styles.label}>Phone</Text><TextInput style={styles.input} value={phone} onChangeText={setPhone} placeholder="Phone number" placeholderTextColor={Colors.textTertiary} keyboardType="phone-pad" /></View>
@@ -74,7 +76,7 @@ export default function NewEmployeeScreen() {
         </View>
       </ScrollView>
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
+        <TouchableOpacity style={[styles.saveBtn, { backgroundColor: Colors.primary }, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
           <Text style={styles.saveBtnT}>{saving ? 'Saving...' : 'Add Employee'}</Text>
         </TouchableOpacity>
       </View>
@@ -84,7 +86,7 @@ export default function NewEmployeeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   form: { padding: 16, paddingBottom: 100 },
   field: { marginBottom: 18 },
   label: { fontSize: 13, fontWeight: '500', color: Colors.textSecondary, marginBottom: 6 },
@@ -103,6 +105,6 @@ const styles = StyleSheet.create({
   rateCurrency: { fontSize: 14, color: Colors.textSecondary },
   rateInput: { backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.border, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7, fontSize: 15, color: Colors.text, textAlign: 'right', minWidth: 80 },
   footer: { paddingHorizontal: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: Colors.borderLight, backgroundColor: Colors.white },
-  saveBtn: { backgroundColor: Colors.primary, borderRadius: 12, paddingVertical: 15, alignItems: 'center' },
+  saveBtn: { borderRadius: 12, paddingVertical: 15, alignItems: 'center' },
   saveBtnT: { color: Colors.white, fontSize: 16, fontWeight: '600' },
 });

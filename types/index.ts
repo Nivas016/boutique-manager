@@ -96,6 +96,35 @@ export interface OrderWithDetails extends Order {
   balance: number;
 }
 
+// ── Order Item ────────────────────────────────────────────
+export interface OrderItem {
+  id: number;
+  order_id: number;
+  garment_type: string;
+  quantity: number;
+  unit_price: number;
+  employee_id: number | null;
+  employee_share: number;
+  embroidery_employee_id: number | null;
+  embroidery_share: number;
+  notes: string | null;
+  sort_order: number;
+  // Joined fields
+  employee_name?: string | null;
+  embroidery_employee_name?: string | null;
+}
+
+export interface OrderItemInput {
+  garment_type: string;
+  quantity: number;
+  unit_price?: number;
+  employee_id?: number | null;
+  employee_share?: number;
+  embroidery_employee_id?: number | null;
+  embroidery_share?: number;
+  notes?: string;
+}
+
 // ── Payment ───────────────────────────────────────────────
 export interface Payment {
   id: number;

@@ -8,6 +8,7 @@ import { useAlert } from '../../hooks/useAlert';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/colors';
+import { useTheme } from '../../contexts/ThemeContext';
 import { getEmployeeById, getEmployeeRates, setEmployeeRate, updateEmployee } from '../../db/employees';
 import { DEFAULT_GARMENTS } from '../../constants/garments';
 
@@ -15,6 +16,7 @@ export default function EmployeeEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  useTheme();
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -72,7 +74,7 @@ export default function EmployeeEditScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.flex}
+      style={[styles.flex, { backgroundColor: Colors.background }]}
       behavior="padding"
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
@@ -151,7 +153,7 @@ export default function EmployeeEditScreen() {
         <TouchableOpacity style={styles.cancelBtn} onPress={() => router.back()}>
           <Text style={styles.cancelBtnText}>Cancel</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.saveBtn, saving && styles.saveBtnDisabled]} onPress={handleSave} disabled={saving}>
+        <TouchableOpacity style={[styles.saveBtn, { backgroundColor: Colors.primary }, saving && styles.saveBtnDisabled]} onPress={handleSave} disabled={saving}>
           <Text style={styles.saveBtnText}>{saving ? 'Saving…' : 'Save changes'}</Text>
         </TouchableOpacity>
       </View>
@@ -161,7 +163,7 @@ export default function EmployeeEditScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: Colors.background },
+  flex: { flex: 1 },
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 8 },
   card: { backgroundColor: Colors.white, borderRadius: 12, padding: 16, marginBottom: 20 },
@@ -187,7 +189,7 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingTop: 12, borderTopWidth: 0.5, borderTopColor: Colors.borderLight, backgroundColor: Colors.white },
   cancelBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: Colors.background, borderWidth: 1, borderColor: Colors.border, alignItems: 'center' },
   cancelBtnText: { fontSize: 15, fontWeight: '500', color: Colors.text },
-  saveBtn: { flex: 2, paddingVertical: 14, borderRadius: 12, backgroundColor: Colors.primary, alignItems: 'center' },
+  saveBtn: { flex: 2, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
   saveBtnDisabled: { opacity: 0.6 },
   saveBtnText: { fontSize: 15, fontWeight: '600', color: Colors.white },
 });

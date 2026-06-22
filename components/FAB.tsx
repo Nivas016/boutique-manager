@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../constants/colors';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface Props {
   icon?: keyof typeof Ionicons.glyphMap;
@@ -12,6 +13,7 @@ interface Props {
 
 export default function FAB({ icon = 'add', onPress }: Props) {
   const insets = useSafeAreaInsets();
+  useTheme();
   return (
     <TouchableOpacity
       style={[styles.fab, { bottom: insets.bottom + 80 }]}
@@ -19,7 +21,7 @@ export default function FAB({ icon = 'add', onPress }: Props) {
       activeOpacity={0.85}
     >
       <LinearGradient
-        colors={['#0EA5E9', '#38BDF8']}
+        colors={[Colors.primary, Colors.primaryMuted]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradient}

@@ -6,14 +6,16 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Colors } from '../../constants/colors';
+import { useTheme } from '../../contexts/ThemeContext';
 import { getAllSettings, setSetting } from '../../db/settings';
 import { exportBackup, importBackup } from '../../db/backup';
 import * as DocumentPicker from 'expo-document-picker';
+import { scheduleDailyReminder } from '../../utils/notifications';
 
 function SettingRow({ icon, label, subtitle, onPress, danger }: any) {
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
-      <View style={[styles.rowIcon, danger && { backgroundColor: Colors.dangerLight }]}>
+      <View style={[styles.rowIcon, { backgroundColor: danger ? Colors.dangerLight : Colors.primaryLight }]}>
         <Ionicons name={icon} size={18} color={danger ? Colors.danger : Colors.primary} />
       </View>
       <View style={styles.rowContent}>
@@ -28,6 +30,7 @@ function SettingRow({ icon, label, subtitle, onPress, danger }: any) {
 export default function SettingsScreen() {
   const router = useRouter();
   const { showAlert, alertProps } = useAlert();
+  const { theme, setTheme } = useTheme();
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [editModal, setEditModal] = useState<{ key: string; label: string; value: string } | null>(null);
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -70,9 +73,12 @@ export default function SettingsScreen() {
     const value = `${hh}:${mm}`;
     await setSetting('reminder_time', value);
     setSettings((prev) => ({ ...prev, reminder_time: value }));
+    const scheduled = await scheduleDailyReminder(time.getHours(), time.getMinutes());
     showAlert(
       'Reminder Saved',
-      `Daily reminder set for ${formatReminderTime({ reminder_time: value })}.\n\nNote: Notifications require a production build — they will not fire in Expo Go.`,
+      scheduled
+        ? `Daily reminder set for ${formatReminderTime({ reminder_time: value })}.`
+        : `Time saved, but notification permission was denied. Enable it in your device settings.`,
     );
   };
 
@@ -111,7 +117,31 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView style={[styles.container, { backgroundColor: Colors.background }]} showsVerticalScrollIndicator={false}>
+      <Text style={styles.sectionTitle}>Appearance</Text>
+      <View style={[styles.card, { padding: 10 }]}>
+        <View style={styles.themeRow}>
+          <TouchableOpacity
+            style={[styles.themeTile, theme === 'peacock' && styles.themeTileActive]}
+            onPress={() => setTheme('peacock')}
+            activeOpacity={0.75}
+          >
+            <View style={[styles.themeCircle, { backgroundColor: '#226880' }]} />
+            <Text style={[styles.themeLabel, theme === 'peacock' && { color: '#226880', fontWeight: '700' }]}>Peacock</Text>
+            {theme === 'peacock' && <Ionicons name="checkmark-circle" size={15} color="#226880" />}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.themeTile, theme === 'atelier' && { ...styles.themeTileActive, borderColor: '#8B3A5B' }]}
+            onPress={() => setTheme('atelier')}
+            activeOpacity={0.75}
+          >
+            <View style={[styles.themeCircle, { backgroundColor: '#8B3A5B' }]} />
+            <Text style={[styles.themeLabel, theme === 'atelier' && { color: '#8B3A5B', fontWeight: '700' }]}>Atelier</Text>
+            {theme === 'atelier' && <Ionicons name="checkmark-circle" size={15} color="#8B3A5B" />}
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <Text style={styles.sectionTitle}>Shop</Text>
       <View style={styles.card}>
         <SettingRow icon="storefront-outline" label="Shop Name" subtitle={settings.shop_name || 'Tap to set'} onPress={() => handleEdit('shop_name', 'Shop Name')} />
@@ -167,8 +197,10 @@ export default function SettingsScreen() {
         <SettingRow icon="cloud-download-outline" label="Import Backup" subtitle="Restore from a file" onPress={handleImport} />
       </View>
 
-      <View style={styles.footer}><Text style={styles.footerText}>Boutique Manager v1.1</Text></View>
-      <View style={styles.footer}><Text style={styles.footerText}>Made with Care</Text></View>
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>Boutique Manager v1.3</Text>
+        <Text style={styles.footerText}>Made with Care ❤️</Text>
+      </View>
 
       <AppAlert {...alertProps} />
 
@@ -196,11 +228,11 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   sectionTitle: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 20, marginBottom: 8, paddingHorizontal: 20 },
   card: { backgroundColor: Colors.white, marginHorizontal: 16, borderRadius: 12, overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 0.5, borderBottomColor: Colors.borderLight },
-  rowIcon: { width: 32, height: 32, borderRadius: 8, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  rowIcon: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   rowContent: { flex: 1 },
   rowLabel: { fontSize: 15, fontWeight: '500', color: Colors.text },
   rowSubtitle: { fontSize: 12, color: Colors.textSecondary, marginTop: 1 },
@@ -217,4 +249,9 @@ const styles = StyleSheet.create({
   iosTimeBtn: { paddingVertical: 6, paddingHorizontal: 12 },
   iosTimeCancelText: { fontSize: 15, color: Colors.textSecondary },
   iosTimeSaveText: { fontSize: 15, fontWeight: '600', color: Colors.primary },
+  themeRow: { flexDirection: 'row', gap: 8 },
+  themeTile: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1.5, borderColor: Colors.border, backgroundColor: Colors.background, gap: 8 },
+  themeTileActive: { borderColor: Colors.primary, backgroundColor: Colors.primaryLight },
+  themeCircle: { width: 22, height: 22, borderRadius: 11 },
+  themeLabel: { fontSize: 13, color: Colors.textSecondary, flex: 1 },
 });

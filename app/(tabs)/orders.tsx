@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, StyleSheet, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Colors } from '../../constants/colors';
+import { useTheme } from '../../contexts/ThemeContext';
 import { OrderWithDetails } from '../../types';
 import { getOrders } from '../../db/orders';
 import { formatDateShort, isOverdue, isDueToday } from '../../utils/dates';
@@ -15,17 +16,25 @@ import EmptyState from '../../components/EmptyState';
 const FILTERS = [
   { key: 'all', label: 'All' },
   { key: 'active', label: 'Active' },
+  { key: 'overdue', label: 'Overdue' },
+  { key: 'today', label: 'Due Today' },
+  { key: 'tomorrow', label: 'Tomorrow' },
   { key: 'ready', label: 'Ready' },
   { key: 'delivered', label: 'Delivered' },
-  { key: 'overdue', label: 'Overdue' },
 ];
 
 export default function OrdersScreen() {
   const router = useRouter();
+  useTheme();
+  const { filter: filterParam } = useLocalSearchParams<{ filter?: string }>();
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState(filterParam || 'all');
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setFilter(filterParam || 'all');
+  }, [filterParam]);
 
   const loadOrders = useCallback(async () => {
     try {
@@ -45,7 +54,7 @@ export default function OrdersScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]}>
       <View style={styles.topSection}>
         <View style={styles.searchContainer}>
           <SearchBar placeholder="Order #, customer, design..." onSearch={setSearch} />
@@ -86,7 +95,7 @@ export default function OrdersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   topSection: { backgroundColor: Colors.background },
   searchContainer: { paddingHorizontal: 16, paddingTop: 8 },
   list: { paddingHorizontal: 16, paddingBottom: 120 },

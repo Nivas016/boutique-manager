@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } fr
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/colors';
+import { useTheme } from '../../contexts/ThemeContext';
 import { getCalendarDates, getOrders } from '../../db/orders';
 import { OrderWithDetails } from '../../types';
 import { formatDateShort, isOverdue, isDueToday } from '../../utils/dates';
@@ -12,6 +13,7 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function CalendarScreen() {
   const router = useRouter();
+  useTheme();
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
@@ -58,7 +60,7 @@ export default function CalendarScreen() {
   const todayStr = today.toISOString().split('T')[0];
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: Colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.monthNav}>
           <TouchableOpacity onPress={goToPrev}><Ionicons name="chevron-back" size={22} color={Colors.text} /></TouchableOpacity>
@@ -98,7 +100,7 @@ export default function CalendarScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
+  safe: { flex: 1 },
   monthNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14 },
   monthTitle: { fontSize: 17, fontWeight: '600', color: Colors.text },
   weekRow: { flexDirection: 'row', paddingHorizontal: 8 },

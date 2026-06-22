@@ -5,6 +5,7 @@ import {
 import { useLocalSearchParams, useRouter, useFocusEffect, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/colors';
+import { useTheme } from '../../contexts/ThemeContext';
 import { Customer } from '../../types';
 import { getCustomerById, softDeleteCustomer } from '../../db/customers';
 import { getMeasurements } from '../../db/measurements';
@@ -18,6 +19,7 @@ type Tab = 'info' | 'measurements' | 'orders';
 export default function CustomerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  useTheme();
   const [activeTab, setActiveTab] = useState<Tab>('info');
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [measurements, setMeasurements] = useState<any[]>([]);
@@ -55,7 +57,7 @@ export default function CustomerDetailScreen() {
   const initials = customer.name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: Colors.background }]}>
       <Stack.Screen
         options={{
           headerRight: () => (
@@ -148,7 +150,7 @@ function InfoRow({ label, value }: { label: string; value: string | null }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   header: { backgroundColor: Colors.white, alignItems: 'center', paddingVertical: 20, borderBottomWidth: 1, borderBottomColor: Colors.borderLight },
   avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   initials: { fontSize: 20, fontWeight: '700', color: Colors.primary },

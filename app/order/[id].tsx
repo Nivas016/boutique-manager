@@ -5,10 +5,12 @@ import {
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/colors';
+import { useTheme } from '../../contexts/ThemeContext';
 import AppAlert from '../../components/AppAlert';
 import { useAlert } from '../../hooks/useAlert';
-import { OrderWithDetails } from '../../types';
+import { OrderItem, OrderWithDetails } from '../../types';
 import { getOrderById, updateOrderStatus, updateOrder } from '../../db/orders';
+import { getOrderItems } from '../../db/order_items';
 import { getPaymentsByOrder } from '../../db/payments';
 import { formatDate, formatDateShort, isOverdue } from '../../utils/dates';
 import { formatCurrency } from '../../utils/currency';
@@ -18,16 +20,19 @@ import { STATUS_FLOW, ORDER_STATUSES, OrderStatusKey } from '../../constants/sta
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  useTheme();
   const { showAlert, alertProps } = useAlert();
   const [order, setOrder] = useState<OrderWithDetails | null>(null);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
 
   const load = useCallback(async () => {
     const o = await getOrderById(Number(id));
     setOrder(o);
     if (o) {
-      const p = await getPaymentsByOrder(o.id);
+      const [p, oi] = await Promise.all([getPaymentsByOrder(o.id), getOrderItems(o.id)]);
       setPayments(p);
+      setOrderItems(oi);
     }
   }, [id]);
 
@@ -71,7 +76,7 @@ export default function OrderDetailScreen() {
 
   return (
     <>
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView style={[styles.container, { backgroundColor: Colors.background }]} showsVerticalScrollIndicator={false}>
       {/* Status */}
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Status</Text>
@@ -125,6 +130,50 @@ export default function OrderDetailScreen() {
           ) : null}
         </View>
       </View>
+
+      {/* Garment Items */}
+      {orderItems.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>
+            Garment items{orderItems.length > 1 ? ` (${orderItems.length})` : ''}
+          </Text>
+          <View style={styles.itemsCard}>
+            {orderItems.map((item, index) => (
+              <View key={item.id} style={[styles.itemRow, index < orderItems.length - 1 && styles.itemRowBorder]}>
+                <View style={styles.itemLeft}>
+                  <View style={styles.itemBadge}>
+                    <Text style={styles.itemBadgeText}>{index + 1}</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.itemGarment}>{item.garment_type}</Text>
+                    {item.quantity > 1 && (
+                      <Text style={styles.itemQty}>× {item.quantity}</Text>
+                    )}
+                  </View>
+                </View>
+                <View style={styles.itemRight}>
+                  {item.employee_name && (
+                    <View style={styles.itemAssignRow}>
+                      <Ionicons name="cut-outline" size={11} color={Colors.textTertiary} />
+                      <Text style={styles.itemAssign}>
+                        {item.employee_name}{item.employee_share > 0 ? ` · ₹${item.employee_share}` : ''}
+                      </Text>
+                    </View>
+                  )}
+                  {item.embroidery_employee_name && (
+                    <View style={styles.itemAssignRow}>
+                      <Ionicons name="color-wand-outline" size={11} color={Colors.textTertiary} />
+                      <Text style={styles.itemAssign}>
+                        {item.embroidery_employee_name}{item.embroidery_share > 0 ? ` · ₹${item.embroidery_share}` : ''}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
 
       {/* Payments */}
       <View style={styles.section}>
@@ -182,7 +231,7 @@ function DetailItem({ label, value, color }: { label: string; value: string; col
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   section: { paddingHorizontal: 16, marginTop: 16 },
   sectionLabel: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
@@ -205,6 +254,17 @@ const styles = StyleSheet.create({
   paymentAmount: { fontSize: 13, color: Colors.textSecondary },
   addPaymentBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 10, paddingVertical: 12, borderRadius: 10, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border },
   addPaymentText: { fontSize: 14, fontWeight: '500', color: Colors.text },
+  itemsCard: { backgroundColor: Colors.white, borderRadius: 12, overflow: 'hidden', shadowColor: Colors.shadow, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 1, shadowRadius: 2, elevation: 1 },
+  itemRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 12 },
+  itemRowBorder: { borderBottomWidth: 0.5, borderBottomColor: Colors.borderLight },
+  itemLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  itemBadge: { width: 22, height: 22, borderRadius: 11, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
+  itemBadgeText: { fontSize: 11, fontWeight: '700', color: Colors.primary },
+  itemGarment: { fontSize: 14, fontWeight: '500', color: Colors.text },
+  itemQty: { fontSize: 12, color: Colors.textSecondary, marginTop: 1 },
+  itemRight: { alignItems: 'flex-end', gap: 2 },
+  itemAssignRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  itemAssign: { fontSize: 12, color: Colors.textSecondary },
   actionRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
   editBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: 10, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border },
   editBtnText: { fontSize: 14, fontWeight: '500', color: Colors.text },

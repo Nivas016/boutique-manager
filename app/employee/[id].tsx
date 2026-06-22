@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { useLocalSearchParams, useRouter, Stack, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/colors';
+import { useTheme } from '../../contexts/ThemeContext';
 import { getEmployeeById, getEmployeeRates, getEmployeeMonthlyOrders, MonthlyOrderEntry } from '../../db/employees';
 import { EmployeeRate, EmployeeWithWorkload } from '../../types';
 import { formatCurrency } from '../../utils/currency';
@@ -14,6 +15,7 @@ const MONTH_NAMES = ['January','February','March','April','May','June','July','A
 export default function EmployeeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  useTheme();
 
   const [employee, setEmployee] = useState<EmployeeWithWorkload | null>(null);
   const [rates, setRates] = useState<EmployeeRate[]>([]);
@@ -65,7 +67,7 @@ export default function EmployeeDetailScreen() {
           ),
         }}
       />
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView style={[styles.container, { backgroundColor: Colors.background }]} showsVerticalScrollIndicator={false}>
         {/* Profile card */}
         <View style={styles.section}>
           <View style={styles.profileCard}>
@@ -170,7 +172,7 @@ export default function EmployeeDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   section: { paddingHorizontal: 16, marginTop: 16 },
   sectionLabel: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
   profileCard: { backgroundColor: Colors.white, borderRadius: 12, padding: 16, flexDirection: 'row', alignItems: 'center', marginBottom: 10 },

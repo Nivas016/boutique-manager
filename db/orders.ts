@@ -1,7 +1,8 @@
 import { getDatabase } from './connection';
-import { Order, OrderWithDetails } from '../types';
+import { Order, OrderItemInput, OrderWithDetails } from '../types';
 import { OrderStatusKey } from '../constants/statuses';
 import { getSetting, setSetting } from './settings';
+import { replaceOrderItems } from './order_items';
 
 export async function getOrders(options?: {
   search?: string;
@@ -52,6 +53,12 @@ export async function getOrders(options?: {
     } else if (options.status === 'overdue') {
       conditions.push(`o.promised_date < ? AND o.status NOT IN ('delivered', 'cancelled')`);
       params.push(today);
+    } else if (options.status === 'today') {
+      conditions.push(`o.promised_date = ? AND o.status NOT IN ('delivered', 'cancelled')`);
+      params.push(today);
+    } else if (options.status === 'tomorrow') {
+      conditions.push(`o.promised_date = ? AND o.status NOT IN ('delivered', 'cancelled')`);
+      params.push(tomorrow);
     } else {
       conditions.push(`o.status = ?`);
       params.push(options.status);
@@ -126,14 +133,10 @@ export async function generateOrderNumber(): Promise<string> {
 
 export async function createOrder(data: {
   customer_id: number;
-  employee_id?: number;
-  employee_share?: number;
-  embroidery_employee_id?: number;
-  embroidery_share?: number;
+  items: OrderItemInput[];
   design_serial_number?: string;
   fabric_details?: string;
   embroidery_details?: string;
-  garment_type: string;
   promised_date: string;
   trial_date?: string;
   total_amount: number;
@@ -144,6 +147,8 @@ export async function createOrder(data: {
   const db = await getDatabase();
   const orderNumber = await generateOrderNumber();
 
+  const primaryItem = data.items[0];
+  // Store first item's employee on orders table for display in list views
   const result = await db.runAsync(
     `INSERT INTO orders
      (order_number, customer_id, employee_id, employee_share,
@@ -153,14 +158,14 @@ export async function createOrder(data: {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     orderNumber,
     data.customer_id,
-    data.employee_id || null,
-    data.employee_share ?? 0,
-    data.embroidery_employee_id || null,
-    data.embroidery_share ?? 0,
+    primaryItem?.employee_id ?? null,
+    primaryItem?.employee_share ?? 0,
+    primaryItem?.embroidery_employee_id ?? null,
+    primaryItem?.embroidery_share ?? 0,
     data.design_serial_number?.trim() || null,
     data.fabric_details?.trim() || null,
     data.embroidery_details?.trim() || null,
-    data.garment_type,
+    primaryItem?.garment_type ?? '',
     data.promised_date,
     data.trial_date || null,
     data.total_amount,
@@ -169,7 +174,8 @@ export async function createOrder(data: {
 
   const orderId = result.lastInsertRowId;
 
-  // Create initial payment if advance paid
+  await replaceOrderItems(orderId, data.items);
+
   if (data.advance_amount && data.advance_amount > 0) {
     await db.runAsync(
       `INSERT INTO payments (order_id, amount, mode, notes) VALUES (?, ?, ?, 'Advance')`,
@@ -205,17 +211,32 @@ export async function updateOrderStatus(
 
 export async function updateOrder(
   id: number,
-  data: Partial<Order>
+  data: Partial<Order> & { items?: OrderItemInput[] }
 ): Promise<void> {
   const db = await getDatabase();
+
+  if (data.items && data.items.length > 0) {
+    await replaceOrderItems(id, data.items);
+    // Sync denormalized columns from first item
+    const primary = data.items[0];
+    await db.runAsync(
+      `UPDATE orders SET garment_type = ?, employee_id = ?, employee_share = ?,
+         embroidery_employee_id = ?, embroidery_share = ? WHERE id = ?`,
+      primary.garment_type,
+      primary.employee_id ?? null,
+      primary.employee_share ?? 0,
+      primary.embroidery_employee_id ?? null,
+      primary.embroidery_share ?? 0,
+      id
+    );
+  }
+
   const fields: string[] = [];
   const values: any[] = [];
 
   const allowed = [
-    'employee_id', 'employee_share',
-    'embroidery_employee_id', 'embroidery_share',
     'design_serial_number', 'fabric_details', 'embroidery_details',
-    'garment_type', 'status', 'promised_date', 'trial_date',
+    'status', 'promised_date', 'trial_date',
     'alteration_notes', 'total_amount', 'notes', 'delivered_at',
   ];
 

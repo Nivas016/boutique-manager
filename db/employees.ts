@@ -12,24 +12,32 @@ export async function getEmployees(activeOnly: boolean = true): Promise<Employee
            COALESCE(earn.monthly_earnings, 0) as monthly_earnings
     FROM employees e
     LEFT JOIN (
-      SELECT emp_id, COUNT(*) as active_orders
+      SELECT emp_id, COUNT(DISTINCT order_id) as active_orders
       FROM (
-        SELECT employee_id as emp_id FROM orders
-        WHERE status NOT IN ('delivered','cancelled') AND employee_id IS NOT NULL
+        SELECT oi.employee_id as emp_id, oi.order_id
+        FROM order_items oi
+        JOIN orders o ON o.id = oi.order_id
+        WHERE o.status NOT IN ('delivered','cancelled') AND oi.employee_id IS NOT NULL
         UNION ALL
-        SELECT embroidery_employee_id FROM orders
-        WHERE status NOT IN ('delivered','cancelled') AND embroidery_employee_id IS NOT NULL
+        SELECT oi.embroidery_employee_id, oi.order_id
+        FROM order_items oi
+        JOIN orders o ON o.id = oi.order_id
+        WHERE o.status NOT IN ('delivered','cancelled') AND oi.embroidery_employee_id IS NOT NULL
       ) AS combined_active
       GROUP BY emp_id
     ) active ON active.emp_id = e.id
     LEFT JOIN (
       SELECT emp_id, SUM(share) as monthly_earnings
       FROM (
-        SELECT employee_id as emp_id, employee_share as share, stitching_completed_at as completion_date
-        FROM orders WHERE status != 'cancelled' AND employee_id IS NOT NULL AND stitching_completed_at IS NOT NULL
+        SELECT oi.employee_id as emp_id, oi.employee_share as share, o.stitching_completed_at as completion_date
+        FROM order_items oi
+        JOIN orders o ON o.id = oi.order_id
+        WHERE o.status != 'cancelled' AND oi.employee_id IS NOT NULL AND oi.employee_share > 0 AND o.stitching_completed_at IS NOT NULL
         UNION ALL
-        SELECT embroidery_employee_id, embroidery_share, embroidery_completed_at
-        FROM orders WHERE status != 'cancelled' AND embroidery_employee_id IS NOT NULL AND embroidery_completed_at IS NOT NULL
+        SELECT oi.embroidery_employee_id, oi.embroidery_share, o.embroidery_completed_at
+        FROM order_items oi
+        JOIN orders o ON o.id = oi.order_id
+        WHERE o.status != 'cancelled' AND oi.embroidery_employee_id IS NOT NULL AND oi.embroidery_share > 0 AND o.embroidery_completed_at IS NOT NULL
       ) AS combined_earn
       WHERE strftime('%Y-%m', completion_date) = ?
       GROUP BY emp_id
@@ -48,13 +56,17 @@ export async function getEmployeeById(id: number): Promise<EmployeeWithWorkload 
             0 as monthly_earnings
      FROM employees e
      LEFT JOIN (
-       SELECT emp_id, COUNT(*) as active_orders
+       SELECT emp_id, COUNT(DISTINCT order_id) as active_orders
        FROM (
-         SELECT employee_id as emp_id FROM orders
-         WHERE status NOT IN ('delivered','cancelled') AND employee_id IS NOT NULL
+         SELECT oi.employee_id as emp_id, oi.order_id
+         FROM order_items oi
+         JOIN orders o ON o.id = oi.order_id
+         WHERE o.status NOT IN ('delivered','cancelled') AND oi.employee_id IS NOT NULL
          UNION ALL
-         SELECT embroidery_employee_id FROM orders
-         WHERE status NOT IN ('delivered','cancelled') AND embroidery_employee_id IS NOT NULL
+         SELECT oi.embroidery_employee_id, oi.order_id
+         FROM order_items oi
+         JOIN orders o ON o.id = oi.order_id
+         WHERE o.status NOT IN ('delivered','cancelled') AND oi.embroidery_employee_id IS NOT NULL
        ) AS combined_active
        GROUP BY emp_id
      ) active ON active.emp_id = e.id
@@ -82,28 +94,36 @@ export async function getEmployeeMonthlyOrders(
   const yearMonth = `${year}-${String(month).padStart(2, '0')}`;
   const orders = await db.getAllAsync<MonthlyOrderEntry>(
     `SELECT o.id, o.order_number, o.garment_type, o.order_date, o.status,
-            COALESCE(o.employee_share, 0) as share,
+            SUM(oi.employee_share) as share,
             'Stitching' as work_type,
             c.name as customer_name,
             o.stitching_completed_at as completed_at
-     FROM orders o JOIN customers c ON c.id = o.customer_id
-     WHERE o.employee_id = ?
+     FROM order_items oi
+     JOIN orders o ON o.id = oi.order_id
+     JOIN customers c ON c.id = o.customer_id
+     WHERE oi.employee_id = ?
        AND o.status != 'cancelled'
+       AND oi.employee_share > 0
        AND o.stitching_completed_at IS NOT NULL
        AND strftime('%Y-%m', o.stitching_completed_at) = ?
+     GROUP BY o.id
 
      UNION ALL
 
      SELECT o.id, o.order_number, o.garment_type, o.order_date, o.status,
-            COALESCE(o.embroidery_share, 0) as share,
+            SUM(oi.embroidery_share) as share,
             'Embroidery' as work_type,
             c.name as customer_name,
             o.embroidery_completed_at as completed_at
-     FROM orders o JOIN customers c ON c.id = o.customer_id
-     WHERE o.embroidery_employee_id = ?
+     FROM order_items oi
+     JOIN orders o ON o.id = oi.order_id
+     JOIN customers c ON c.id = o.customer_id
+     WHERE oi.embroidery_employee_id = ?
        AND o.status != 'cancelled'
+       AND oi.embroidery_share > 0
        AND o.embroidery_completed_at IS NOT NULL
        AND strftime('%Y-%m', o.embroidery_completed_at) = ?
+     GROUP BY o.id
 
      ORDER BY completed_at DESC`,
     employeeId, yearMonth, employeeId, yearMonth

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/colors';
+import { useTheme } from '../../contexts/ThemeContext';
 import { getEmployees } from '../../db/employees';
 import { EmployeeWithWorkload } from '../../types';
 import FAB from '../../components/FAB';
@@ -12,11 +13,12 @@ import { formatCurrency } from '../../utils/currency';
 
 export default function EmployeeListScreen() {
   const router = useRouter();
+  useTheme();
   const [employees, setEmployees] = useState<EmployeeWithWorkload[]>([]);
   useFocusEffect(useCallback(() => { getEmployees().then(setEmployees); }, []));
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]}>
       <FlatList
         data={employees}
         keyExtractor={(i) => i.id.toString()}
@@ -49,7 +51,7 @@ export default function EmployeeListScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   list: { padding: 16, paddingBottom: 100 },
   card: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.white, borderRadius: 10, padding: 14, marginBottom: 8 },
   avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center', marginRight: 12 },

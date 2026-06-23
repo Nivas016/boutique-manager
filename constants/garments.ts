@@ -18,7 +18,7 @@ export const DEFAULT_GARMENTS: GarmentTemplate[] = [
   {
     type: 'Blouse',
     fields: [
-      'Length', 'Back Open', 'Front Open', 'Shoulder', 'Harmol',
+      'Upper Chest', 'Length', 'Back Open', 'Front Open', 'Shoulder', 'Harmol',
       'Sleeve Length', 'Sleeve Open', 'Nipple Point', 'Cup Size', 'Waist',
     ],
   },
@@ -38,13 +38,17 @@ export const DEFAULT_GARMENTS: GarmentTemplate[] = [
     fields: ['Number of Pieces', 'Border Width', 'Length'],
   },
   {
-    type: 'Falls & Kucchu',
-    fields: ['Number of Pieces', 'Falls Length', 'Kucchu Length'],
+    type: 'Falls',
+    fields: ['Number of Pieces', 'Falls Length'],
+  },
+  {
+    type: 'Kucchu',
+    fields: ['Number of Pieces', 'Kucchu Length'],
   },
 ];
 
 // These garment types are quantity-based only — no body measurement form needed
-export const NO_MEASUREMENT_GARMENTS = new Set(['Saree Zig Zag', 'Falls & Kucchu']);
+export const NO_MEASUREMENT_GARMENTS = new Set(['Saree Zig Zag', 'Falls', 'Kucchu']);
 
 export type MeasurementUnit = 'in' | 'cm';
 export const UNIT_LABELS: Record<MeasurementUnit, string> = {
